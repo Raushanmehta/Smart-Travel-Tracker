@@ -2,96 +2,101 @@ const startBtn = document.getElementById("startBtn");
 const stopBtn = document.getElementById("stopBtn");
 const exportBtn = document.getElementById("exportBtn");
 
-const networkTypeSpan = document.getElementById("networkType");
-const networkSpeedSpan = document.getElementById("networkSpeed");
-const logTableBody = document.querySelector("#logTable tbody");
+const networkType = document.getElementById("networkType");
+const networkSpeed = document.getElementById("networkSpeed");
+const logTable = document.querySelector("#logTable tbody");
 
-let tracking = false;
-let intervalId = null;
-let logs = [];
+let watchId = null;
+let logData = [];
 
 function getNetworkInfo() {
-  const conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
-  if (conn) {
+  const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+  if (connection) {
     return {
-      type: conn.effectiveType || "unknown",
-      speed: conn.downlink ? conn.downlink + " Mbps" : "unknown",
+      type: connection.effectiveType || "unknown",
+      downlink: connection.downlink + " Mbps" || "unknown"
     };
   }
-  return { type: "unknown", speed: "unknown" };
+  return { type: "unknown", downlink: "unknown" };
 }
 
-function updateNetworkDisplay() {
-  const net = getNetworkInfo();
-  networkTypeSpan.textContent = net.type;
-  networkSpeedSpan.textContent = net.speed;
-}
-
-function logData({ latitude, longitude }) {
-  const time = new Date().toLocaleTimeString();
-  const net = getNetworkInfo();
+function logPosition(position) {
+  const { latitude, longitude } = position.coords;
+  const now = new Date();
+  const date = now.toLocaleDateString();
+  const time = now.toLocaleTimeString();
+  const network = getNetworkInfo();
 
   const row = document.createElement("tr");
   row.innerHTML = `
+    <td>${date}</td>
     <td>${time}</td>
     <td>${latitude.toFixed(5)}</td>
     <td>${longitude.toFixed(5)}</td>
-    <td>${net.type}</td>
-    <td>${net.speed}</td>
+    <td>${network.type}</td>
+    <td>${network.downlink}</td>
   `;
-  logTableBody.appendChild(row);
+  logTable.appendChild(row);
 
-  logs.push({ time, latitude, longitude, network: net.type, speed: net.speed });
+  logData.push({
+    date,
+    time,
+    latitude: latitude.toFixed(5),
+    longitude: longitude.toFixed(5),
+    network: network.type,
+    speed: network.downlink
+  });
+
+  networkType.textContent = network.type;
+  networkSpeed.textContent = network.downlink;
+
+  exportBtn.disabled = false;
 }
 
 function startTracking() {
   if (!navigator.geolocation) {
-    alert("Geolocation not supported");
+    alert("Geolocation is not supported by your browser.");
     return;
   }
 
-  tracking = true;
   startBtn.disabled = true;
   stopBtn.disabled = false;
-  exportBtn.disabled = true;
 
-  intervalId = setInterval(() => {
-    updateNetworkDisplay();
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        logData(pos.coords);
-      },
-      (err) => {
-        console.warn("Location error:", err);
-      }
-    );
-  }, 5000); // every 5 seconds
+  watchId = navigator.geolocation.watchPosition(logPosition, (error) => {
+    alert("Error: " + error.message);
+  }, {
+    enableHighAccuracy: true,
+    maximumAge: 10000,
+    timeout: 10000
+  });
 }
 
 function stopTracking() {
-  tracking = false;
-  clearInterval(intervalId);
+  if (watchId !== null) {
+    navigator.geolocation.clearWatch(watchId);
+    watchId = null;
+  }
+
   startBtn.disabled = false;
   stopBtn.disabled = true;
-  exportBtn.disabled = logs.length === 0;
 }
 
-function exportCSV() {
-  let csv = "Time,Latitude,Longitude,Network Type,Network Speed\n";
-  logs.forEach(log => {
-    csv += `${log.time},${log.latitude},${log.longitude},${log.network},${log.speed}\n`;
-  });
+function exportToCSV() {
+  const csvHeader = "Date,Time,Latitude,Longitude,Network,Speed\n";
+  const csvRows = logData.map(row =>
+    `${row.date},${row.time},${row.latitude},${row.longitude},${row.network},${row.speed}`
+  );
 
-  const blob = new Blob([csv], { type: "text/csv" });
+  const csvContent = csvHeader + csvRows.join("\n");
+  const blob = new Blob([csvContent], { type: "text/csv" });
   const url = URL.createObjectURL(blob);
 
   const a = document.createElement("a");
   a.href = url;
-  a.download = "travel-log.csv";
+  a.download = "travel_log.csv";
   a.click();
-  URL.revokeObjectURL(url);
 }
 
 startBtn.addEventListener("click", startTracking);
 stopBtn.addEventListener("click", stopTracking);
-exportBtn.addEventListener("click", exportCSV);
+exportBtn.addEventListener("click", exportToCSV);
