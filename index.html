@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Smart Travel Tracker</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="container">
+    <h1>🚗 Smart Travel Tracker</h1>
+    <button id="startBtn">Start Tracking</button>
+    <button id="stopBtn" disabled>Stop Tracking</button>
+
+    <p><strong>Network:</strong> <span id="networkType">Unknown</span></p>
+    <p><strong>Speed:</strong> <span id="networkSpeed">Unknown</span></p>
+
+    <h2>Trip Logs</h2>
+    <table id="logTable">
+      <thead>
+        <tr>
+          <th>Time</th>
+          <th>Latitude</th>
+          <th>Longitude</th>
+          <th>Network</th>
+          <th>Speed</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+
+    <button id="exportBtn" disabled>Export as CSV</button>
+  </div>
+  <script src="script.js"></script>
+</body>
+</html>
