@@ -21,7 +21,6 @@ function getNetworkInfo() {
   return { type: "unknown", downlink: "unknown" };
 }
 
-// Format and log a location entry
 function logPosition(position) {
   const { latitude, longitude } = position.coords;
   const now = new Date();
@@ -55,7 +54,7 @@ function logPosition(position) {
   exportBtn.disabled = false;
 }
 
-// Start trip on Start button click
+
 function startTracking() {
   if (!navigator.geolocation) {
     alert("Geolocation is not supported by your browser.");
@@ -74,10 +73,10 @@ function startTracking() {
       maximumAge: 0,
       timeout: 10000
     });
-  }, 10000); // Every 10 seconds
+  }, 10000); 
 }
 
-// Stop trip on Stop button click
+
 function stopTracking() {
   if (trackingInterval !== null) {
     clearInterval(trackingInterval);
@@ -88,7 +87,7 @@ function stopTracking() {
   stopBtn.disabled = true;
 }
 
-// Export trip data as CSV
+
 function exportToCSV() {
   const csvHeader = "Date,Time,Latitude,Longitude,Network,Speed\n";
   const csvRows = logData.map(row =>
