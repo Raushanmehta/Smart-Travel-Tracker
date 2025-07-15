@@ -6,9 +6,10 @@ const networkType = document.getElementById("networkType");
 const networkSpeed = document.getElementById("networkSpeed");
 const logTable = document.querySelector("#logTable tbody");
 
-let watchId = null;
+let trackingInterval = null;
 let logData = [];
 
+// Get network type and speed
 function getNetworkInfo() {
   const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
   if (connection) {
@@ -20,6 +21,7 @@ function getNetworkInfo() {
   return { type: "unknown", downlink: "unknown" };
 }
 
+// Format and log a location entry
 function logPosition(position) {
   const { latitude, longitude } = position.coords;
   const now = new Date();
@@ -53,6 +55,7 @@ function logPosition(position) {
   exportBtn.disabled = false;
 }
 
+// Start trip on Start button click
 function startTracking() {
   if (!navigator.geolocation) {
     alert("Geolocation is not supported by your browser.");
@@ -62,25 +65,30 @@ function startTracking() {
   startBtn.disabled = true;
   stopBtn.disabled = false;
 
-  watchId = navigator.geolocation.watchPosition(logPosition, (error) => {
-    alert("Error: " + error.message);
-  }, {
-    enableHighAccuracy: true,
-    maximumAge: 10000,
-    timeout: 10000
-  });
+  // Start logging every 10 seconds
+  trackingInterval = setInterval(() => {
+    navigator.geolocation.getCurrentPosition(logPosition, (error) => {
+      console.error("Geolocation error:", error.message);
+    }, {
+      enableHighAccuracy: true,
+      maximumAge: 0,
+      timeout: 10000
+    });
+  }, 10000); // Every 10 seconds
 }
 
+// Stop trip on Stop button click
 function stopTracking() {
-  if (watchId !== null) {
-    navigator.geolocation.clearWatch(watchId);
-    watchId = null;
+  if (trackingInterval !== null) {
+    clearInterval(trackingInterval);
+    trackingInterval = null;
   }
 
   startBtn.disabled = false;
   stopBtn.disabled = true;
 }
 
+// Export trip data as CSV
 function exportToCSV() {
   const csvHeader = "Date,Time,Latitude,Longitude,Network,Speed\n";
   const csvRows = logData.map(row =>
@@ -93,7 +101,7 @@ function exportToCSV() {
 
   const a = document.createElement("a");
   a.href = url;
-  a.download = "travel_log.csv";
+  a.download = "trip_log.csv";
   a.click();
 }
 
